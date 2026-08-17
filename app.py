@@ -17,7 +17,6 @@ app.permanent_session_lifetime = timedelta(minutes=30)  # ← Session expires in
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Tulip@c66')
 serializer = URLSafeSerializer(app.secret_key)
 
-# ─── Encrypted ID helpers ───
 def encrypt_id(id):
     return serializer.dumps(id)
 
@@ -27,7 +26,6 @@ def decrypt_id(token):
     except:
         return None
 
-# ─── Login required decorator ───
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -48,7 +46,6 @@ def init_db():
         created_at TEXT DEFAULT (datetime('now', 'localtime'))
     )''')
 
-    # Add created_at column if missing (for existing DB)
     try:
         c.execute("ALTER TABLE locations ADD COLUMN created_at TEXT DEFAULT (datetime('now', 'localtime'))")
     except:
@@ -80,7 +77,6 @@ def init_db():
         UNIQUE(kenderaan_id, row_num)
     )''')
 
-    # Default locations if none exist
     c.execute("SELECT COUNT(*) FROM locations")
     if c.fetchone()[0] == 0:
         c.execute("INSERT INTO locations (name) VALUES ('Location 1')")
@@ -136,7 +132,6 @@ def view_page(token):
         return "Invalid or expired link", 404
     return render_template('view.html', location_id=lid, token=token, logged_in=session.get('logged_in', False))
 
-# ─── Locations API ───
 @app.route('/api/locations')
 def get_locations():
     conn = sqlite3.connect(DB_PATH)
@@ -208,11 +203,11 @@ def get_data(location_id):
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
     c.execute("SELECT * FROM locations WHERE id=?", (location_id,))
-    row = c.fetchone()                    # ← Call ONCE
-    if not row:                           # ← Check
+    row = c.fetchone()                   
+    if not row:                         
         conn.close()
         return jsonify({'error': 'Location not found'}), 404
-    loc = dict(row)                       # ← Use the stored result
+    loc = dict(row)                      
     c.execute("SELECT * FROM kenderaan WHERE location_id=? ORDER BY id", (location_id,))
     kenderaan = [dict(r) for r in c.fetchall()]
     kid_list = [k['id'] for k in kenderaan]
@@ -317,11 +312,11 @@ def export_csv(location_id):
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
     c.execute("SELECT * FROM locations WHERE id=?", (location_id,))
-    row = c.fetchone()                    # ← Call ONCE
-    if not row:                           # ← Check once
+    row = c.fetchone()                 
+    if not row:                      
         conn.close()
         return "Location not found", 404
-    loc = dict(row)                       # ← Use stored result
+    loc = dict(row)                     
 
     c.execute("SELECT * FROM kenderaan WHERE location_id=? ORDER BY id", (location_id,))
     kenderaan = [dict(r) for r in c.fetchall()]
@@ -370,7 +365,6 @@ def get_summary():
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
 
-    # Total counts
     c.execute("SELECT COUNT(*) FROM locations")
     total_locations = c.fetchone()[0]
 
@@ -380,17 +374,14 @@ def get_summary():
     c.execute("SELECT COUNT(*) FROM ujian")
     total_rows = c.fetchone()[0]
 
-    # Filled rows (have at least one data field)
     c.execute("""SELECT COUNT(*) FROM ujian 
                   WHERE data_id != '' OR berat_bacaan != '' OR tarikh != ''""")
     filled_rows = c.fetchone()[0]
 
-    # Rows with deviation > 10%
     c.execute("""SELECT COUNT(*) FROM ujian 
                   WHERE CAST(REPLACE(REPLACE(perbezaan, ' %', ''), ',', '.') AS REAL) > 10""")
     high_deviation = c.fetchone()[0]
 
-    # Per-location breakdown
     c.execute("""SELECT l.id, l.name, 
                         COUNT(DISTINCT k.id) as vehicles,
                         COUNT(u.id) as total_tests,
@@ -402,7 +393,6 @@ def get_summary():
                  ORDER BY l.id""")
     locations_data = [dict(r) for r in c.fetchall()]
 
-    # Vehicles with high deviation (> 10 or < -10)
     c.execute("""SELECT k.id, k.name, k.plat, l.name as loc_name, 
                         u.perbezaan, u.berat_bacaan
                 FROM ujian u
