@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Location</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #f1f5f9; margin: 0; padding: 20px; color: #1e293b; }
+        .container { max-width: 1440px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.06); }
+        h1 { border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; font-size: 22px; }
+        a.back { color:#4f46e5; text-decoration:none; font-weight:600; display:inline-block; margin-bottom:12px; }
+        .flex-between { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; }
+        .btn { padding:9px 20px; border:none; border-radius:6px; cursor:pointer; font-weight:600; font-size:14px; text-decoration:none; display:inline-block; }
+        .btn-indigo { background:#4f46e5; color:#fff; }
+        .btn-green { background:#16a34a; color:#fff; }
+        .badge { display:inline-block; padding:3px 14px; border-radius:20px; font-size:12px; font-weight:600; background:#dcfce7; color:#166534; }
+        .loc-bar { background:#f8faff; border:2px solid #e0e7ff; border-radius:10px; padding:14px 16px; margin-bottom:24px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+        .v-section { border:2px solid #e2e8f0; border-radius:10px; padding:20px; margin-bottom:24px; background:#fafaf9; }
+        .v-header { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:14px; background:#fff; padding:14px; border-radius:8px; border:1px solid #e2e8f0; }
+        .v-header div { font-size:14px; }
+        .v-header strong { font-size:11px; text-transform:uppercase; color:#64748b; display:block; margin-bottom:2px; }
+        .table-wrap { overflow-x:auto; background:#fff; border-radius:8px; border:1px solid #e2e8f0; }
+        table { width:100%; border-collapse:collapse; min-width:1050px; }
+        th, td { border:1px solid #e2e8f0; padding:8px 10px; text-align:center; font-size:13px; }
+        th { background:#f1f5f9; font-size:11px; text-transform:uppercase; color:#475569; font-weight:700; }
+        .empty { color:#94a3b8; font-style:italic; }
+      /* ─── Sidebar Layout ─── */
+        body { margin: 0; padding: 0; font-family: -apple-system, sans-serif; color: #1e293b; }
+        .sidebar { position: fixed; top: 0; left: 0; width: 200px; height: 100vh; background: #1e293b; display: flex; flex-direction: column; z-index: 100; }
+        .sidebar .logo { color: #fff; font-size: 18px; font-weight: 700; padding: 20px 20px 24px 20px; border-bottom: 1px solid #334155; }
+        .sidebar .nav-links { flex: 1; overflow-y: auto; padding: 12px 0; }
+        .sidebar a { display: block; padding: 12px 20px; color: #94a3b8; text-decoration: none; font-weight: 600; font-size: 15px; }
+        .sidebar a:hover { background: #334155; color: #fff; }
+        .sidebar a.active { background: #4f46e5; color: #fff; }
+        .sidebar .bottom-link { border-top: 1px solid #334155; padding-top: 12px; }
+        .sidebar .bottom-link a { color: #ef4444; }  /* Red for login/logout */
+
+        /* Main content - scrollable */
+        .main { margin-left: 200px; height: 100vh; overflow-y: auto; background: #f1f5f9; }
+        .main .container { max-width: 1440px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+
+                #loading { text-align:center; padding:40px; font-size:18px; color:#64748b; }
+
+                /* ─── Responsive: Mobile ─── */
+        @media (max-width: 768px) {
+            .sidebar { width: 60px; min-width: 60px; }
+            .sidebar .logo { font-size: 0; padding: 15px; text-align: center; }
+            .sidebar .logo::first-letter { font-size: 24px; }  /* Shows only the emoji */
+            .sidebar a { font-size: 0; padding: 15px; text-align: center; }
+            .sidebar a::first-letter { font-size: 20px; }  /* Shows only the emoji */
+            .sidebar .nav-links a::first-letter { font-size: 20px; }
+            .main { margin-left: 60px; }
+            .main .container { padding: 12px; border-radius: 8px; }
+            
+            /* Grids stack */
+            .grid-4 { grid-template-columns: repeat(2, 1fr) !important; gap: 8px; }
+            .grid-4 .card { padding: 12px; }
+            .grid-4 .card .num { font-size: 24px; }
+            
+            /* Latest boxes stack */
+            #latestBoxes { grid-template-columns: 1fr !important; }
+            
+            /* Vehicle header stacks */
+            .v-header { grid-template-columns: repeat(2, 1fr) !important; gap: 8px; }
+            .loc-bar { flex-direction: column; align-items: stretch; }
+            .loc-bar input { width: 100%; }
+            .flex-between { flex-direction: column; align-items: stretch; }
+            
+            /* Tables scrollable */
+            .table-wrap { overflow-x: auto; }
+            table { min-width: 800px; }
+            th, td { padding: 6px 4px; font-size: 11px; }
+            td input, td select { padding: 4px 2px; font-size: 11px; }
+            
+            /* Buttons full width */
+            .btn { width: 100%; text-align: center; margin-bottom: 4px; }
+            .flex .btn { width: auto; }
+            .gap { flex-wrap: wrap; }
+            .links { flex-wrap: wrap; }
+            .links a { flex: 1; text-align: center; }
+            
+            /* OCR section */
+            .ocr-box textarea { height: 60px; }
+            .ocr-row select { min-width: 80px; font-size: 12px; }
+            
+            /* Cards on home */
+            .latest-card { padding: 14px; }
+            .latest-card .vehicle-name { font-size: 15px; }
+            .latest-card .diff { font-size: 22px; }
+            
+            /* Action bar */
+            .action-bar { padding: 10px; }
+            .action-bar .btn-lg { font-size: 14px; padding: 10px 20px; }
+            
+            /* View page location bar */
+            .loc-bar { gap: 6px; }
+        }
+
+        /* ─── Extra small phones ─── */
+        @media (max-width: 480px) {
+            .sidebar { width: 50px; min-width: 50px; }
+            .sidebar .logo { padding: 10px; }
+            .sidebar a { padding: 12px 10px; }
+            .main { margin-left: 50px; }
+            .main .container { padding: 8px; }
+            .grid-4 { grid-template-columns: 1fr 1fr !important; }
+            .v-header { grid-template-columns: 1fr !important; }
+            h1 { font-size: 18px; }
+            h2 { font-size: 16px; }
+            h3 { font-size: 14px; }
+        }
+
+    </style>
+</head>
+<body>
+
+<!-- <div class="sidebar">
+    <div class="logo">📋 OCR Kejituan HM-WIM</div>
+    <a href="/">🏠 Home</a>
+    <a href="/testing">🧪 Testing</a>
+</div> -->
+
+<div class="sidebar">
+    <div class="logo">📋 OCR App</div>
+    <div class="nav-links">
+        <a href="/" class="{{ 'active' if request.path == '/' else '' }}">🏠 Home</a>
+        <a href="/testing" class="{{ 'active' if request.path == '/testing' else '' }}">🧪 Testing</a>
+    </div>
+    <div class="bottom-link">
+        {% if logged_in %}
+            <a href="/logout">🚪 Logout</a>
+        {% else %}
+            <a href="/login" style="color:#4ade80;">🔐 Login</a>
+        {% endif %}
+    </div>
+</div>
+
+
+<div class="main">
+    <div class="container">
+         <div class="flex-between">
+        <h1>👁️ <span id="locTitle">View Location</span></h1>
+        <!-- <div>
+            <a href="/edit/{{ location_id }}" class="btn btn-indigo">✏️ Edit</a>
+            <button class="btn btn-green" onclick="csv()">⬇ CSV</button>
+            <button class="btn btn-green" onclick="loadView()" style="background:#64748b;">🔄 Refresh</button>
+        </div> -->
+        <div>
+            {% if logged_in %}
+                <a href="/edit/{{ token }}" class="btn btn-indigo">✏️ Edit</a>
+            {% endif %}
+            <button class="btn btn-green" onclick="csv()">⬇ CSV</button>
+            <button class="btn btn-green" onclick="loadView()" style="background:#64748b;">🔄 Refresh</button>
+        </div>
+    </div>
+
+    <div class="loc-bar">
+        <span><strong>Bound 1:</strong> <span id="b1l">-</span></span>
+        <span><strong>Bound 2:</strong> <span id="b2l">-</span></span>
+        <span class="badge" id="badge">⏳ Loading...</span>
+    </div>
+
+    <div id="loading">Loading data from SQLite...</div>
+    <div id="content" style="display:none;"></div>
+    </div>
+</div>
+
+<script>
+    const LID = {{ location_id }};
+
+    async function loadView() {
+        try {
+            const r = await fetch(`/api/data/${LID}`);
+            const d = await r.json();
+            
+            document.getElementById('locTitle').textContent = d.location.name || 'Location';
+            // document.getElementById('editLink').href = `/edit/${LID}`;
+            document.getElementById('b1l').textContent = d.location.bound1_name || 'Bound 1';
+            document.getElementById('b2l').textContent = d.location.bound2_name || 'Bound 2';
+            
+            let html = '';
+            (d.kenderaan || []).forEach(k => {
+                const rows = (d.ujian || []).filter(t => t.kenderaan_id === k.id).sort((a,b) => a.row_num - b.row_num);
+                html += `<div class="v-section">
+                    <h3 style="margin:0 0 12px 0;">🚗 ${esc(k.name||'Vehicle')}</h3>
+                    <div class="v-header">
+                        <div><strong>Plate</strong>${k.plat||'<span class="empty">—</span>'}</div>
+                        <div><strong>Weight</strong>${k.berat?k.berat+' kg':'<span class="empty">—</span>'}</div>
+                        <div><strong>Axles</strong>${k.gandar||'<span class="empty">—</span>'}</div>
+                        <div><strong>Tests</strong>${rows.length}</div>
+                    </div>
+                    <div class="table-wrap"><table>
+                        <thead><tr>
+                            <th onclick="sortTable(0)" style="cursor:pointer;">Bil <span id="s0"></span></th>
+                            <th onclick="sortTable(1)" style="cursor:pointer;">Bound <span id="s1"></span></th>
+                            <th onclick="sortTable(2)" style="cursor:pointer;">Data ID <span id="s2"></span></th>
+                            <th onclick="sortTable(3)" style="cursor:pointer;">Date/Time <span id="s3"></span></th>
+                            <th onclick="sortTable(4)" style="cursor:pointer;">Speed <span id="s4"></span></th>
+                            <th onclick="sortTable(5)" style="cursor:pointer;">Axles <span id="s5"></span></th>
+                            <th onclick="sortTable(6)" style="cursor:pointer;">Lane <span id="s6"></span></th>
+                            <th onclick="sortTable(7)" style="cursor:pointer;">Weight Read <span id="s7"></span></th>
+                            <th onclick="sortTable(8)" style="cursor:pointer;">Diff % <span id="s8"></span></th>
+                            <th onclick="sortTable(9)" style="cursor:pointer;">Remark <span id="s9"></span></th>
+                        </tr></thead>
+                        <tbody>${rows.map((t, idx) => {
+                            const p = parseFloat(t.perbezaan);
+                            const c = !isNaN(p) && Math.abs(p) > 10 ? '#dc2626' : '#0284c7';
+                                return `<tr>
+                                <td style="font-weight:700;">${idx + 1}</td>
+                                <td>${t.arah||'<span class="empty">—</span>'}</td>
+                                <td>${t.data_id||'<span class="empty">—</span>'}</td>
+                                <td>${t.tarikh||'<span class="empty">—</span>'}</td>
+                                <td>${t.kelajuan||'<span class="empty">—</span>'}</td>
+                                <td>${t.bil_gandar||'<span class="empty">—</span>'}</td>
+                                <td>${t.lorong||'<span class="empty">—</span>'}</td>
+                                <td>${t.berat_bacaan||'<span class="empty">—</span>'}</td>
+                                <td style="font-weight:700;color:${c}">${t.perbezaan||'<span class="empty">—</span>'}</td>
+                                <td>${t.remark||'<span class="empty">—</span>'}</td>
+                            </tr>`;
+                        }).join('')}</tbody>
+                    </table></div>
+                </div>`;
+            });
+
+            if ((d.kenderaan||[]).length === 0) {
+                html = '<p style="text-align:center;padding:40px;color:#94a3b8;">No vehicles yet.</p>';
+            }
+
+            document.getElementById('content').innerHTML = html;
+            document.getElementById('content').style.display = 'block';
+            document.getElementById('loading').style.display = 'none';
+            
+            const badge = document.getElementById('badge');
+            badge.textContent = `✅ ${(d.kenderaan||[]).length} veh, ${(d.ujian||[]).length} rows`;
+            badge.style.background = '#dcfce7';
+            badge.style.color = '#166534';
+        } catch(e) {
+            document.getElementById('loading').innerHTML = '❌ ' + e.message;
+        }
+    }
+
+    // ─── SORT TABLE (view page) ───
+    let sortCol = -1;
+    let sortAsc = true;
+
+    function sortTable(col) {
+        const tables = document.querySelectorAll('.table-wrap table');
+        tables.forEach(table => {
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            if (sortCol === col) sortAsc = !sortAsc;
+            else { sortCol = col; sortAsc = true; }
+
+            rows.sort((a, b) => {
+                let va = a.cells[col]?.textContent.trim() || '';
+                let vb = b.cells[col]?.textContent.trim() || '';
+                let na = parseFloat(va), nb = parseFloat(vb);
+                if (!isNaN(na) && !isNaN(nb)) { va = na; vb = nb; }
+                else { va = va.toLowerCase(); vb = vb.toLowerCase(); }
+                if (va < vb) return sortAsc ? -1 : 1;
+                if (va > vb) return sortAsc ? 1 : -1;
+                return 0;
+            });
+
+            rows.forEach(r => tbody.appendChild(r));
+        });
+
+        // Update arrows
+        for (let i = 0; i < 10; i++) {
+            const el = document.getElementById(`s${i}`);
+            if (el) el.textContent = '';
+        }
+        const arrow = document.getElementById(`s${col}`);
+        if (arrow) arrow.textContent = sortAsc ? ' ▲' : ' ▼';
+    }
+
+
+    function csv() { window.open(`/api/export_csv/${LID}`, '_blank'); }
+    function esc(s) { if (!s) return ''; return String(s).replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    loadView();
+    setInterval(loadView, 5000);
+</script>
+</body>
+</html>

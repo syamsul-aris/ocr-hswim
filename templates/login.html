@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Tulip Resources Sdn Bhd</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; min-height: 100vh; display: flex; background: #f1f5f9; }
+        
+        /* Left panel - branded */
+        .brand-panel { width: 420px; min-width: 420px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px; position: relative; overflow: hidden; }
+        .brand-panel::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(79,70,229,0.08) 0%, transparent 60%); }
+        .brand-content { position: relative; z-index: 1; text-align: center; }
+        .logo-icon { width: 80px; height: 80px; background: #4f46e5; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 36px; color: #fff; box-shadow: 0 8px 32px rgba(79,70,229,0.3); }
+        .company-name { color: #fff; font-size: 22px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 4px; }
+        .company-tagline { color: #94a3b8; font-size: 13px; margin-bottom: 32px; }
+        .system-info { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; text-align: left; }
+        .system-info h3 { color: #e2e8f0; font-size: 14px; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 0.5px; }
+        .system-info p { color: #94a3b8; font-size: 13px; margin: 6px 0; line-height: 1.5; }
+        .system-info .feature { display: flex; align-items: center; gap: 8px; color: #cbd5e1; font-size: 13px; margin: 6px 0; }
+        
+        /* Right panel - login form */
+        .login-panel { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px; }
+        .login-box { width: 100%; max-width: 380px; }
+        .login-title { font-size: 24px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+        .login-subtitle { color: #64748b; font-size: 14px; margin-bottom: 28px; }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px; }
+        .form-group input { width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; transition: .15s; }
+        .form-group input:focus { border-color: #4f46e5; outline: none; box-shadow: 0 0 0 3px rgba(79,70,229,.12); }
+        
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; }
+        .btn-primary { background: #4f46e5; color: #fff; }
+        .btn-primary:hover { background: #4338ca; }
+        .btn-secondary { background: transparent; color: #64748b; border: 1px solid #e2e8f0; margin-top: 10px; font-size: 13px; padding: 10px; }
+        .btn-secondary:hover { background: #f8fafc; }
+        
+        .error { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; display: {% if error %}block{% else %}none{% endif %}; }
+        
+        .footer-text { color: #94a3b8; font-size: 12px; text-align: center; margin-top: 24px; }
+        
+        @media (max-width: 800px) {
+            body { flex-direction: column; }
+            .brand-panel { width: 100%; min-width: auto; padding: 30px; }
+            .brand-panel .system-info { display: none; }
+            .login-panel { padding: 30px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- LEFT: Brand Panel -->
+<div class="brand-panel">
+    <div class="brand-content">
+        <!-- <img src="/static/logo.png" alt="Tulip Resources Sdn Bhd" style="width:280px;height:80px;border-radius:20px;object-fit:cover;margin-bottom:20px;box-shadow:0 8px 32px rgba(79,70,229,0.3);"> -->
+        <div class="company-name">Vehicle Testing Management System</div>
+        <div class="company-tagline">Tulip Resources Sdn Bhd</div>
+        
+        <div class="system-info">
+            <h3>📋 About This System</h3>
+            <div class="feature">📍 Manage multiple testing locations</div>
+            <div class="feature">🚛 Track vehicle weight & axle data</div>
+            <div class="feature">📊 Real-time deviation analysis</div>
+            <div class="feature">📸 OCR screenshot data entry</div>
+            <div class="feature">📈 CSV export & reporting</div>
+            <p style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.1);">
+                Version 2.0 · Secure local database<br>
+                Powered by SQLite + Flask
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- RIGHT: Login Form -->
+<div class="login-panel">
+    <div class="login-box">
+        <div class="login-title">🔐 Welcome Back</div>
+        <div class="login-subtitle">Sign in to access the management system</div>
+
+        <div class="error">{{ error }}</div>
+
+        <form method="POST">
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" placeholder="Enter admin password" autofocus required>
+            </div>
+            <button type="submit" class="btn btn-primary">Sign In</button>
+        </form>
+
+        <a href="/" class="btn btn-secondary" style="display:block;text-align:center;text-decoration:none;">← Back to Dashboard</a>
+
+        <div class="footer-text">
+            Tulip Resources Sdn Bhd &copy; 2026
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

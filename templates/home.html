@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - Summary</title>
+    <style>
+        /* ─── Sidebar Layout ─── */
+        body { margin: 0; padding: 0; font-family: -apple-system, sans-serif; color: #1e293b; }
+        .sidebar { position: fixed; top: 0; left: 0; width: 200px; height: 100vh; background: #1e293b; display: flex; flex-direction: column; z-index: 100; }
+        .sidebar .logo { color: #fff; font-size: 18px; font-weight: 700; padding: 20px 20px 24px 20px; border-bottom: 1px solid #334155; }
+        .sidebar .nav-links { flex: 1; overflow-y: auto; padding: 12px 0; }
+        .sidebar a { display: block; padding: 12px 20px; color: #94a3b8; text-decoration: none; font-weight: 600; font-size: 15px; }
+        .sidebar a:hover { background: #334155; color: #fff; }
+        .sidebar a.active { background: #4f46e5; color: #fff; }
+        .sidebar .bottom-link { border-top: 1px solid #334155; padding-top: 12px; }
+        .sidebar .bottom-link a { color: #ef4444; }  /* Red for login/logout */
+
+        /* Main content - scrollable */
+        .main { margin-left: 200px; height: 100vh; overflow-y: auto; background: #f1f5f9; }
+        .main .container { max-width: 1440px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .card { background: #f8fafc; border-radius: 10px; padding: 20px; border: 1px solid #e2e8f0; }
+        .card .num { font-size: 32px; font-weight: 700; color: #0f172a; }
+        .card .label { font-size: 13px; color: #64748b; margin-top: 4px; }
+        .card .icon { font-size: 24px; margin-bottom: 8px; }
+
+        .latest-card { border-radius: 12px; padding: 20px; color: #fff; position: relative; overflow: hidden; }
+        .latest-card .vehicle-name { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+        .latest-card .plate { font-size: 13px; opacity: 0.85; margin-bottom: 12px; }
+        .latest-card .info-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; opacity: 0.9; }
+        .latest-card .diff { font-size: 28px; font-weight: 700; text-align: center; margin-top: 8px; }
+        .latest-card .loc { font-size: 11px; opacity: 0.7; margin-top: 10px; text-align: center; }
+        .latest-card .icon-bg { position: absolute; right: -10px; bottom: -10px; font-size: 80px; opacity: 0.15; }
+
+        .section-title { font-size: 18px; font-weight: 700; margin: 0 0 14px 0; display: flex; align-items: center; gap: 8px; }
+        .table-wrap { background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0; overflow: hidden; margin-bottom: 24px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+        th { background: #f1f5f9; font-size: 12px; text-transform: uppercase; color: #64748b; font-weight: 700; }
+        .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        .badge-green { background: #dcfce7; color: #166534; }
+        .badge-amber { background: #fef3c7; color: #92400e; }
+        .badge-red { background: #fee2e2; color: #991b1b; }
+        .alerts-box { background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 16px; margin-bottom: 24px; }
+        .alert-item { padding: 8px 0; border-bottom: 1px solid #fecaca; display: flex; align-items: center; gap: 12px; font-size: 14px; }
+        .alert-item:last-child { border-bottom: none; }
+        .alert-val { font-weight: 700; color: #dc2626; }
+        .links a { padding: 4px 12px; border-radius: 5px; text-decoration: none; font-size: 12px; font-weight: 600; display: inline-block; margin-right: 4px; }
+        .link-edit { background: #4f46e5; color: #fff; }
+        .link-view { background: #d97706; color: #fff; }
+        @media (max-width: 768px) { .grid-4 { grid-template-columns: repeat(2, 1fr); } }
+
+        /* ─── Responsive: Mobile ─── */
+        @media (max-width: 768px) {
+            .sidebar { width: 60px; min-width: 60px; }
+            .sidebar .logo { font-size: 0; padding: 15px; text-align: center; }
+            .sidebar .logo::first-letter { font-size: 24px; }  /* Shows only the emoji */
+            .sidebar a { font-size: 0; padding: 15px; text-align: center; }
+            .sidebar a::first-letter { font-size: 20px; }  /* Shows only the emoji */
+            .sidebar .nav-links a::first-letter { font-size: 20px; }
+            .main { margin-left: 60px; }
+            .main .container { padding: 12px; border-radius: 8px; }
+            
+            /* Grids stack */
+            .grid-4 { grid-template-columns: repeat(2, 1fr) !important; gap: 8px; }
+            .grid-4 .card { padding: 12px; }
+            .grid-4 .card .num { font-size: 24px; }
+            
+            /* Latest boxes stack */
+            #latestBoxes { grid-template-columns: 1fr !important; }
+            
+            /* Vehicle header stacks */
+            .v-header { grid-template-columns: repeat(2, 1fr) !important; gap: 8px; }
+            .loc-bar { flex-direction: column; align-items: stretch; }
+            .loc-bar input { width: 100%; }
+            .flex-between { flex-direction: column; align-items: stretch; }
+            
+            /* Tables scrollable */
+            .table-wrap { overflow-x: auto; }
+            table { min-width: 800px; }
+            th, td { padding: 6px 4px; font-size: 11px; }
+            td input, td select { padding: 4px 2px; font-size: 11px; }
+            
+            /* Buttons full width */
+            .btn { width: 100%; text-align: center; margin-bottom: 4px; }
+            .flex .btn { width: auto; }
+            .gap { flex-wrap: wrap; }
+            .links { flex-wrap: wrap; }
+            .links a { flex: 1; text-align: center; }
+            
+            /* OCR section */
+            .ocr-box textarea { height: 60px; }
+            .ocr-row select { min-width: 80px; font-size: 12px; }
+            
+            /* Cards on home */
+            .latest-card { padding: 14px; }
+            .latest-card .vehicle-name { font-size: 15px; }
+            .latest-card .diff { font-size: 22px; }
+            
+            /* Action bar */
+            .action-bar { padding: 10px; }
+            .action-bar .btn-lg { font-size: 14px; padding: 10px 20px; }
+            
+            /* View page location bar */
+            .loc-bar { gap: 6px; }
+        }
+
+        /* ─── Extra small phones ─── */
+        @media (max-width: 480px) {
+            .sidebar { width: 50px; min-width: 50px; }
+            .sidebar .logo { padding: 10px; }
+            .sidebar a { padding: 12px 10px; }
+            .main { margin-left: 50px; }
+            .main .container { padding: 8px; }
+            .grid-4 { grid-template-columns: 1fr 1fr !important; }
+            .v-header { grid-template-columns: 1fr !important; }
+            h1 { font-size: 18px; }
+            h2 { font-size: 16px; }
+            h3 { font-size: 14px; }
+        }
+
+    </style>
+</head>
+<body>
+
+<!-- <div class="sidebar">
+    <div class="logo">📋 OCR Kejituan HM-WIM</div>
+    <a href="/" class="active">🏠 Home</a>
+    <a href="/testing">🧪 Testing</a>
+</div> -->
+
+<div class="sidebar">
+    <div class="logo">📋 OCR App</div>
+    <div class="nav-links">
+        <a href="/" class="{{ 'active' if request.path == '/' else '' }}">🏠 Home</a>
+        <a href="/testing" class="{{ 'active' if request.path == '/testing' else '' }}">🧪 Testing</a>
+    </div>
+    <div class="bottom-link">
+        {% if logged_in %}
+            <a href="/logout">🚪 Logout</a>
+        {% else %}
+            <a href="/login" style="color:#4ade80;">🔐 Login</a>
+        {% endif %}
+    </div>
+</div>
+
+
+
+<div class="main">
+    <div class="container">
+        <h1>📊 Summary Dashboard</h1>
+
+        <div class="grid-4" id="cards">
+            <div class="card"><div class="icon">📍</div><div class="num">-</div><div class="label">Locations</div></div>
+            <div class="card"><div class="icon">🚗</div><div class="num">-</div><div class="label">Vehicles</div></div>
+            <div class="card"><div class="icon">📊</div><div class="num">-</div><div class="label">Test Rows</div></div>
+            <div class="card"><div class="icon">✅</div><div class="num">-</div><div class="label">Filled</div></div>
+        </div>
+
+        <div id="alertsSection" style="display:none;">
+            <div class="section-title">⚠️ High Deviation Alerts</div>
+            <div class="alerts-box" id="alertsList"></div>
+        </div>
+
+        <!-- Latest Updates -->
+        <div class="section-title">🔄 Latest Updates</div>
+        <div id="latestBoxes" style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:24px;">
+            <div style="text-align:center;padding:30px;color:#94a3b8;">Loading...</div>
+        </div>
+
+
+        <div class="section-title">📍 Per Location</div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Location</th><th>Vehicles</th><th>Tests</th><th>Filled</th><th>Completion</th><th>Actions</th></tr></thead>
+                <tbody id="locTbody"><tr><td colspan="6" style="text-align:center;padding:20px;color:#94a3b8;">Loading...</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ─── LOAD LATEST UPDATES ───
+    async function loadLatest() {
+        try {
+            const r = await fetch('/api/latest');
+            const data = await r.json();
+            const container = document.getElementById('latestBoxes');
+            
+            if (data.length === 0) {
+                container.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:#94a3b8;">No test data yet.</div>';
+                return;
+            }
+
+            const colors = ['#4f46e5', '#0891b2', '#7c3aed'];
+            // Shuffle colors randomly
+            const shuffled = [...colors].sort(() => Math.random() - 0.5);
+
+            container.innerHTML = data.map((item, i) => {
+                const diff = item.perbezaan || '0 %';
+                const diffNum = parseFloat(diff);
+                const isHigh = !isNaN(diffNum) && diffNum > 10;
+                
+                return `
+                    <div class="latest-card" style="background:${shuffled[i] || shuffled[0]}">
+                        <div class="icon-bg">🚗</div>
+                        <div class="vehicle-name">${esc(item.vehicle_name || 'Vehicle')}</div>
+                        <div class="plate">${esc(item.plat || '—')} · ${esc(item.gandar || '—')} axles</div>
+                        <div class="info-row"><span>📍 ${esc(item.location_name || '')}</span><span>Row #${item.row_num}</span></div>
+                        <div class="diff" style="color:${isHigh ? '#fca5a5' : '#fff'}">${diff}</div>
+                        <div class="loc">${isHigh ? '⚠️ High deviation' : '✅ Within range'}</div>
+                    </div>
+                `;
+            }).join('');
+        } catch(e) {
+            document.getElementById('latestBoxes').innerHTML = 
+                '<div style="grid-column:1/-1;text-align:center;padding:30px;color:#dc2626;">❌ ' + e.message + '</div>';
+        }
+    }
+
+    function esc(s) { if (!s) return ''; return String(s).replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    async function load() {
+        try {
+            const r = await fetch('/api/summary');
+            const d = await r.json();
+            const c = document.getElementById('cards').children;
+            
+            c[0].querySelector('.num').textContent = d.total_locations;
+            c[1].querySelector('.num').textContent = d.total_vehicles;
+            c[2].querySelector('.num').textContent = d.total_rows;
+            c[3].querySelector('.num').textContent = d.fill_percentage + '%';
+
+            if (d.alerts && d.alerts.length) {
+                document.getElementById('alertsSection').style.display = 'block';
+                document.getElementById('alertsList').innerHTML = d.alerts.map(a =>
+                    `<div class="alert-item">🚗 <strong>${esc(a.name||'')}</strong> (${esc(a.loc_name)}) — Plat: ${esc(a.plat||'-')} <span class="alert-val">${a.perbezaan}</span></div>`
+                ).join('');
+            }
+
+            const tb = document.getElementById('locTbody');
+            if (!d.locations.length) { tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#94a3b8;">No locations.</td></tr>'; return; }
+            // tb.innerHTML = d.locations.map(l => {
+            //     const p = l.total_tests > 0 ? Math.round(l.filled_tests/l.total_tests*100) : 0;
+            //     const bg = p > 80 ? 'badge-green' : p > 50 ? 'badge-amber' : 'badge-red';
+            //     return `<tr><td><strong>${esc(l.name)}</strong></td><td>${l.vehicles}</td><td>${l.total_tests}</td><td>${l.filled_tests}</td><td><span class="badge ${bg}">${p}%</span></td><td class="links"><a href="/edit/${l.id}" class="link-edit">✏️ Edit</a><a href="/view/${l.id}" class="link-view">👁️ View</a></td></tr>`;
+            // }).join('');
+            tb.innerHTML = d.locations.map(l => {
+                const p = l.total_tests > 0 ? Math.round(l.filled_tests/l.total_tests*100) : 0;
+                const bg = p > 80 ? 'badge-green' : p > 50 ? 'badge-amber' : 'badge-red';
+                // Get token from the API — we need to fetch tokens
+                return `<tr><td><strong>${esc(l.name)}</strong></td><td>${l.vehicles}</td><td>${l.total_tests}</td><td>${l.filled_tests}</td><td><span class="badge ${bg}">${p}%</span></td><td class="links">loading...</td></tr>`;
+            }).join('');
+
+            // Then fetch tokens and update links
+            const tr = await fetch('/api/tokens');
+            const tokens = await tr.json();
+            tokens.forEach(t => {
+                const links = tb.querySelector(`tr:nth-child(${tokens.indexOf(t)+1}) .links`);
+                if (links) links.innerHTML = `<a href="/edit/${t.token}" class="link-edit">✏️ Edit</a><a href="/view/${t.token}" class="link-view">👁️ View</a>`;
+            });
+
+        } catch(e) {
+            document.getElementById('locTbody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#dc2626;">❌ '+e.message+'</td></tr>';
+        }
+        loadLatest();
+    }
+    function esc(s) { if (!s) return ''; return String(s).replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    load();
+
+    setInterval(() => {
+        loadLatest();
+    }, 5000);
+</script>
+</body>
+</html>

@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Data - Edit</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #f1f5f9; margin: 0; padding: 20px; color: #1e293b; }
+        .container { max-width: 1440px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.06); }
+        h1 { border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; font-size: 22px; }
+        .nav { display: flex; gap: 10px; margin-bottom: 15px; }
+        .nav a { padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 600; }
+        .nav a.active { background: #4f46e5; color: #fff; }
+        .nav a:not(.active) { background: #e2e8f0; color: #475569; }
+        .flex { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .mt-8 { margin-top: 8px; }
+        .mb-12 { margin-bottom: 12px; }
+        #saveStatus { display: inline-block; padding: 3px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; background: #e2e8f0; color: #64748b; }
+
+        /* Location Bar */
+        .loc-bar { background: #f8faff; border: 2px solid #e0e7ff; border-radius: 10px; padding: 14px 16px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .loc-bar select { padding: 8px 14px; border: 1px solid #c7d2fe; border-radius: 6px; font-size: 15px; font-weight: 600; min-width: 200px; background: #fff; }
+        .loc-bar input { padding: 6px 10px; border: 1px solid #c7d2fe; border-radius: 5px; font-size: 13px; width: 100px; }
+
+        /* Buttons */
+        .btn { padding: 9px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; }
+        .btn:hover { opacity: .85; }
+        .btn-indigo { background: #4f46e5; color: #fff; }
+        .btn-orange { background: #d97706; color: #fff; }
+        .btn-green { background: #16a34a; color: #fff; }
+        .btn-red { background: #dc2626; color: #fff; }
+        .btn-sm { font-size: 12px; padding: 5px 12px; }
+
+        /* OCR */
+        .ocr-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 16px; margin-bottom: 24px; }
+        .ocr-box textarea { width: 100%; height: 80px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; resize: vertical; font-size: 13px; margin-top: 8px; }
+        #status { font-weight: 600; font-size: 13px; color: #059669; margin: 6px 0; }
+        .ocr-row select { padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 5px; background: #fff; }
+
+        /* Parse Preview */
+        .parse-preview { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px; margin-top: 10px; display: none; }
+        .parse-preview .field-tag { background: #fff; border: 1px solid #e2e8f0; border-radius: 5px; padding: 4px 10px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
+        .fill-btn { background: #4f46e5; color: #fff; border: none; border-radius: 3px; padding: 2px 8px; cursor: pointer; font-size: 11px; font-weight: 600; }
+
+        /* Vehicle Card */
+        .v-section { border: 2px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 24px; background: #fafaf9; }
+        .v-header { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 14px; background: #fff; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .field label { display: block; font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 3px; text-transform: uppercase; }
+        .field input { width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 14px; }
+
+        /* Table */
+        .table-wrap { overflow-x: auto; background: #fff; border-radius: 8px; border: 1px solid #e2e8f0; }
+        table { width: 100%; border-collapse: collapse; min-width: 1050px; }
+        th, td { border: 1px solid #e2e8f0; padding: 0; text-align: center; }
+        th { background: #f1f5f9; padding: 10px 5px; font-size: 11px; text-transform: uppercase; color: #475569; font-weight: 700; }
+        td input, td select { width: 100%; padding: 8px 4px; border: none; text-align: center; font-size: 13px; background: transparent; }
+        td input:focus, td select:focus { background: #eef2ff; outline: none; }
+        td input[readonly] { background: #f8fafc; font-weight: 700; color: #0284c7; }
+        .bil-cell { background: #f8fafc; font-weight: 700; width: 40px; }
+        .highlight-row td input:not([readonly]) { background: #fef3c7; }
+
+        /* Action Bar at bottom */
+        .action-bar { margin-top: 20px; padding: 16px; background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 10px; text-align: center; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <h1>📸 OCR Vehicle Data <span id="saveStatus">⏳ Loading...</span></h1>
+
+    <div class="nav">
+        <a href="/" class="active">✏️ Edit Data</a>
+        <a href="/view">👁️ View Only</a>
+    </div>
+
+    <!-- LOCATION BAR (always visible) -->
+    <div class="loc-bar">
+        <label style="font-weight:700;">📍 Location:</label>
+        <select id="locationSelect" onchange="switchLocation()"></select>
+        <button class="btn btn-green btn-sm" onclick="addLocation()">➕ New Location</button>
+        <button class="btn btn-red btn-sm" onclick="deleteLocation()">🗑 Delete</button>
+
+        <span style="margin-left:auto;font-size:12px;">Bound Names:</span>
+        <input type="text" id="bound1Name" onchange="saveSettings()" placeholder="Bound 1">
+        <input type="text" id="bound2Name" onchange="saveSettings()" placeholder="Bound 2">
+    </div>
+
+    <!-- OCR SECTION -->
+    <div class="ocr-box">
+        <h3 style="margin:0 0 6px 0;">1. Upload Screenshot → OCR</h3>
+        <input type="file" id="imageInput" accept="image/*">
+        <div id="status">Waiting for image...</div>
+        <textarea id="fullText" placeholder="Extracted text appears here..."></textarea>
+
+        <div class="flex mt-8">
+            <div class="flex" style="gap:6px;">
+                <label style="font-size:12px;font-weight:700;">Fill into:</label>
+                <select id="targetVehicle" onchange="rebuildRowDropdown()" class="ocr-row"></select>
+                <select id="targetRow" class="ocr-row"></select>
+            </div>
+            <button class="btn btn-indigo btn-sm" onclick="parseAndPreview()">🔍 Preview</button>
+            <button class="btn btn-orange btn-sm" onclick="autoFillRow()">⚡ Auto Fill</button>
+        </div>
+
+        <div id="parsePreview" class="parse-preview">
+            <strong>📋 Parsed:</strong>
+            <div id="parsedFields" class="flex mt-8" style="gap:6px;"></div>
+        </div>
+    </div>
+
+    <!-- ACTION BUTTONS -->
+    <div class="flex-between mb-12">
+        <div class="flex">
+            <button class="btn btn-green" onclick="saveToServer()">💾 Save to SQLite</button>
+            <button class="btn btn-indigo" onclick="exportCSV()">⬇ Export CSV</button>
+        </div>
+        <span style="font-size:12px;color:#94a3b8;">Data in <strong>vehicle.db</strong></span>
+    </div>
+
+    <!-- VEHICLE SECTIONS (generated by JS) -->
+    <div id="vehicles-container"></div>
+
+    <!-- ADD VEHICLE BUTTON (always at bottom) -->
+    <div class="action-bar">
+        <button class="btn btn-green" onclick="addKenderaan()" style="font-size:16px;padding:12px 30px;">
+            ➕ Add New Vehicle
+        </button>
+    </div>
+
+</div>
+
+<script>
+    let currentLocationId = null;
+    let vehicleList = [];     // array of vehicle objects from API
+    let ujianList = [];       // array of ujian objects from API
+    let locSettings = {};     // {bound1_name, bound2_name}
+    let lastParsed = {};
+
+    // ================================================================
+    //  LOCATIONS
+    // ================================================================
+    async function loadLocations() {
+        const r = await fetch('/api/locations');
+        const locs = await r.json();
+        const sel = document.getElementById('locationSelect');
+        sel.innerHTML = '';
+        locs.forEach(l => {
+            sel.innerHTML += `<option value="${l.id}">${l.name}</option>`;
+        });
+        if (!currentLocationId && locs.length) {
+            currentLocationId = locs[0].id;
+            sel.value = currentLocationId;
+        } else if (locs.find(l => l.id == currentLocationId)) {
+            sel.value = currentLocationId;
+        } else if (locs.length) {
+            currentLocationId = locs[0].id;
+            sel.value = currentLocationId;
+        }
+    }
+
+    async function switchLocation() {
+        currentLocationId = parseInt(document.getElementById('locationSelect').value);
+        await loadData();
+    }
+
+    async function addLocation() {
+        const name = prompt('New location name:');
+        if (!name) return;
+        await fetch('/api/locations', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name})
+        });
+        await loadLocations();
+        const sel = document.getElementById('locationSelect');
+        sel.value = sel.options[sel.options.length - 1].value;
+        await switchLocation();
+    }
+
+    async function deleteLocation() {
+        if (!confirm('Delete this location and ALL its data?')) return;
+        await fetch(`/api/locations/${currentLocationId}`, {method: 'DELETE'});
+        await loadLocations();
+        await switchLocation();
+    }
+
+    // ================================================================
+    //  LOAD / SAVE DATA
+    // ================================================================
+    async function loadData() {
+        if (!currentLocationId) return;
+        try {
+            const r = await fetch(`/api/data/${currentLocationId}`);
+            const data = await r.json();
+
+            locSettings = data.location || {};
+            vehicleList = data.kenderaan || [];
+            ujianList = data.ujian || [];
+
+            document.getElementById('bound1Name').value = locSettings.bound1_name || 'Bound 1';
+            document.getElementById('bound2Name').value = locSettings.bound2_name || 'Bound 2';
+
+            renderVehicles();
+            rebuildTargetDropdowns();
+            recalcAll();
+
+            document.getElementById('saveStatus').textContent =
+                `✅ ${vehicleList.length} vehicles, ${ujianList.length} rows`;
+            document.getElementById('saveStatus').style.background = '#dcfce7';
+            document.getElementById('saveStatus').style.color = '#166534';
+        } catch (err) {
+            document.getElementById('saveStatus').textContent = '❌ ' + err.message;
+        }
+    }
+
+    async function saveToServer() {
+        if (!currentLocationId) return;
+        // Gather data from DOM
+        const kenderaan = [];
+        const ujian = [];
+
+        vehicleList.forEach(v => {
+            kenderaan.push({
+                id: v.id,
+                name: g(`kname_${v.id}`),
+                plat: g(`plat_${v.id}`),
+                berat: g(`v_berat_${v.id}`),
+                gandar: g(`v_gandar_${v.id}`)
+            });
+        });
+
+        ujianList.forEach(u => {
+            ujian.push({
+                kenderaan_id: u.kenderaan_id,
+                row_num: u.row_num,
+                arah: g(`arah_${u.kenderaan_id}_${u.row_num}`),
+                data_id: g(`dataid_${u.kenderaan_id}_${u.row_num}`),
+                tarikh: g(`tarikh_${u.kenderaan_id}_${u.row_num}`),
+                kelajuan: g(`kelajuan_${u.kenderaan_id}_${u.row_num}`),
+                bil_gandar: g(`gandart_${u.kenderaan_id}_${u.row_num}`),
+                lorong: g(`lorong_${u.kenderaan_id}_${u.row_num}`),
+                berat_bacaan: g(`bacaan_${u.kenderaan_id}_${u.row_num}`),
+                perbezaan: g(`perbezaan_${u.kenderaan_id}_${u.row_num}`),
+                remark: g(`remark_${u.kenderaan_id}_${u.row_num}`)
+            });
+        });
+
+        try {
+            await fetch(`/api/save/${currentLocationId}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({kenderaan, ujian})
+            });
+            document.getElementById('saveStatus').textContent = '✅ Saved ' + new Date().toLocaleTimeString();
+        } catch (err) {
+            document.getElementById('saveStatus').textContent = '❌ ' + err.message;
+        }
+    }
+
+    async function saveSettings() {
+        const b1 = document.getElementById('bound1Name').value.trim() || 'Bound 1';
+        const b2 = document.getElementById('bound2Name').value.trim() || 'Bound 2';
+        locSettings.bound1_name = b1;
+        locSettings.bound2_name = b2;
+        // Update via API (using add_location endpoint with UPDATE logic)
+        await fetch(`/api/locations`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                name: locSettings.name || `Location ${currentLocationId}`,
+                bound1_name: b1,
+                bound2_name: b2,
+                id: currentLocationId
+            })
+        });
+        updateAllBoundDropdowns();
+    }
+
+    function g(id) { return document.getElementById(id)?.value || ''; }
+
+    // Auto-save (debounced)
+    let saveTimer;
+    document.addEventListener('input', e => {
+        if (!e.target.id || !currentLocationId) return;
+        const id = e.target.id;
+        if (id.startsWith('v_berat_')) recalcVehicle(parseInt(id.split('_')[2]));
+        else if (id.startsWith('bacaan_')) {
+            const p = id.split('_');
+            if (p.length >= 3) calcDiff(parseInt(p[1]), parseInt(p[2]));
+        }
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(saveToServer, 2000);
+    });
+
+    // ================================================================
+    //  RENDER VEHICLES
+    // ================================================================
+    function renderVehicles() {
+        const c = document.getElementById('vehicles-container');
+        const b1 = locSettings.bound1_name || 'Bound 1';
+        const b2 = locSettings.bound2_name || 'Bound 2';
+        let html = '';
+
+        vehicleList.forEach(v => {
+            const rows = ujianList.filter(u => u.kenderaan_id === v.id).sort((a,b) => a.row_num - b.row_num);
+            let tableRows = '';
+            rows.forEach(u => {
+                tableRows += `<tr id="row_${v.id}_${u.row_num}">
+                    <td class="bil-cell">${u.row_num}</td>
+                    <td><select id="arah_${v.id}_${u.row_num}">
+                        <option value="">Select...</option>
+                        <option value="${b1}">${b1}</option>
+                        <option value="${b2}">${b2}</option>
+                    </select></td>
+                    <td><input type="text" id="dataid_${v.id}_${u.row_num}" value="${h(u.data_id)}"></td>
+                    <td><input type="text" id="tarikh_${v.id}_${u.row_num}" value="${h(u.tarikh)}"></td>
+                    <td><input type="text" id="kelajuan_${v.id}_${u.row_num}" value="${h(u.kelajuan)}"></td>
+                    <td><input type="text" id="gandart_${v.id}_${u.row_num}" value="${h(u.bil_gandar)}"></td>
+                    <td><input type="text" id="lorong_${v.id}_${u.row_num}" value="${h(u.lorong)}"></td>
+                    <td><input type="number" step="0.01" id="bacaan_${v.id}_${u.row_num}" value="${h(u.berat_bacaan)}"></td>
+                    <td><input type="text" id="perbezaan_${v.id}_${u.row_num}" readonly value="${h(u.perbezaan)}" placeholder="Auto %"></td>
+                    <td><input type="text" id="remark_${v.id}_${u.row_num}" value="${h(u.remark)}"></td>
+                </tr>`;
+            });
+
+            html += `
+                <div class="v-section">
+                    <div class="flex-between" style="margin-bottom:12px;">
+                        <h3 style="margin:0;">🚗 ${h(v.name || 'Vehicle')}</h3>
+                        <div class="flex">
+                            <button class="btn btn-indigo btn-sm" onclick="addRow(${v.id})">➕ Add Row</button>
+                            <button class="btn btn-red btn-sm" onclick="deleteKenderaan(${v.id})">✕ Delete</button>
+                        </div>
+                    </div>
+                    <div class="v-header">
+                        <div class="field"><label>Nama</label><input type="text" id="kname_${v.id}" value="${h(v.name)}"></div>
+                        <div class="field"><label>No. Plat</label><input type="text" id="plat_${v.id}" value="${h(v.plat)}"></div>
+                        <div class="field"><label>Berat (kg)</label><input type="number" step="0.01" id="v_berat_${v.id}" value="${h(v.berat)}"></div>
+                        <div class="field"><label>Bil. Gandar</label><input type="text" id="v_gandar_${v.id}" value="${h(v.gandar)}"></div>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr>
+                                <th>Bil</th><th style="width:110px;">Arah/Bound</th><th>Data ID</th><th>Tarikh & Masa</th>
+                                <th>Kelajuan</th><th>Bil.Gandar</th><th>Lorong</th><th>Berat Bacaan</th>
+                                <th>Perbezaan Julat %</th><th>Remark</th>
+                            </tr></thead>
+                            <tbody>${tableRows}</tbody>
+                        </table>
+                    </div>
+                </div>`;
+        });
+
+        c.innerHTML = html;
+
+        // Set bound dropdown values after rendering
+        ujianList.forEach(u => {
+            const sel = document.getElementById(`arah_${u.kenderaan_id}_${u.row_num}`);
+            if (sel && u.arah) sel.value = u.arah;
+        });
+    }
+
+    function h(s) { if (!s) return ''; return String(s).replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    // ================================================================
+    //  VEHICLE CRUD — Always reload from API after changes
+    // ================================================================
+    async function addKenderaan() {
+        const name = prompt('Vehicle name:') || 'Kenderaan Baru';
+        await fetch(`/api/add_kenderaan/${currentLocationId}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name})
+        });
+        // Reload everything from the database (guarantees sync)
+        await loadData();
+    }
+
+    async function deleteKenderaan(id) {
+        if (!confirm('Delete this vehicle and all its test rows?')) return;
+        await fetch(`/api/delete_kenderaan/${id}`, {method: 'DELETE'});
+        await loadData();
+    }
+
+    async function addRow(kenderaanId) {
+        // Find the next row number from the database
+        const rows = ujianList.filter(u => u.kenderaan_id === kenderaanId);
+        const maxRow = rows.length > 0 ? Math.max(...rows.map(u => u.row_num)) : 0;
+        const newRowNum = maxRow + 1;
+
+        await fetch(`/api/add_row/${kenderaanId}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({row_num: newRowNum})
+        });
+        await loadData();
+    }
+
+    // Also fix saveToServer to be simpler and more reliable
+    async function saveToServer() {
+        if (!currentLocationId) return;
+        
+        // Build data directly from the DOM
+        const kenderaan = vehicleList.map(v => ({
+            id: v.id,
+            name: g(`kname_${v.id}`),
+            plat: g(`plat_${v.id}`),
+            berat: g(`v_berat_${v.id}`),
+            gandar: g(`v_gandar_${v.id}`)
+        }));
+
+        const ujian = ujianList.map(u => ({
+            kenderaan_id: u.kenderaan_id,
+            row_num: u.row_num,
+            arah: g(`arah_${u.kenderaan_id}_${u.row_num}`),
+            data_id: g(`dataid_${u.kenderaan_id}_${u.row_num}`),
+            tarikh: g(`tarikh_${u.kenderaan_id}_${u.row_num}`),
+            kelajuan: g(`kelajuan_${u.kenderaan_id}_${u.row_num}`),
+            bil_gandar: g(`gandart_${u.kenderaan_id}_${u.row_num}`),
+            lorong: g(`lorong_${u.kenderaan_id}_${u.row_num}`),
+            berat_bacaan: g(`bacaan_${u.kenderaan_id}_${u.row_num}`),
+            perbezaan: g(`perbezaan_${u.kenderaan_id}_${u.row_num}`),
+            remark: g(`remark_${u.kenderaan_id}_${u.row_num}`)
+        }));
+
+        try {
+            await fetch(`/api/save/${currentLocationId}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({kenderaan, ujian})
+            });
+            document.getElementById('saveStatus').textContent = '✅ Saved ' + new Date().toLocaleTimeString();
+        } catch (err) {
+            document.getElementById('saveStatus').textContent = '❌ ' + err.message;
+        }
+    }
+
+
+    // ================================================================
+    //  TARGET DROPDOWNS (for OCR fill)
+    // ================================================================
+    function rebuildTargetDropdowns() {
+        const vSel = document.getElementById('targetVehicle');
+        vSel.innerHTML = '';
+        vehicleList.forEach(v => {
+            vSel.innerHTML += `<option value="${v.id}">${v.name || 'Vehicle ' + v.id}</option>`;
+        });
+        rebuildRowDropdown();
+    }
+
+    function rebuildRowDropdown() {
+        const vId = parseInt(document.getElementById('targetVehicle').value);
+        const rSel = document.getElementById('targetRow');
+        rSel.innerHTML = '';
+        const rows = ujianList.filter(u => u.kenderaan_id === vId).sort((a,b) => a.row_num - b.row_num);
+        rows.forEach(u => {
+            rSel.innerHTML += `<option value="${u.row_num}">Row ${u.row_num}</option>`;
+        });
+    }
+
+    function updateAllBoundDropdowns() {
+        const b1 = locSettings.bound1_name || 'Bound 1';
+        const b2 = locSettings.bound2_name || 'Bound 2';
+        document.querySelectorAll('select[id^="arah_"]').forEach(sel => {
+            const cur = sel.value;
+            sel.innerHTML = `<option value="">Select...</option><option value="${b1}">${b1}</option><option value="${b2}">${b2}</option>`;
+            if (cur === b1 || cur === b2) sel.value = cur;
+        });
+    }
+
+    // ================================================================
+    //  OCR
+    // ================================================================
+    document.getElementById('imageInput').addEventListener('change', async e => {
+        const f = e.target.files[0];
+        if (!f) return;
+        document.getElementById('status').textContent = '⏳ Reading image...';
+        document.getElementById('fullText').value = '';
+        try {
+            const { data } = await Tesseract.recognize(f, 'eng');
+            document.getElementById('fullText').value = data.text;
+            document.getElementById('status').textContent = '✅ Done. Select vehicle/row & Auto Fill.';
+        } catch (_) {
+            document.getElementById('status').textContent = '❌ Error. Try clearer image.';
+        }
+    });
+
+    function parseOCR(text) {
+        const p = {};
+        const m = (re, idx = 1) => { const x = text.match(re); return x ? x[idx] : null; };
+        p.dataId = m(/[Dd]\s*(\d{5,})/);
+        p.beratBacaan = m(/gross\s*weight\s*[:\s]*([\d.]+)\s*kg/i);
+        const dt = m(/[Dd]ate\s+([A-Za-z]+[\s.]?\d{1,2},?\s*\d{4})/);
+        const tm = m(/[Tt]ime\s+(\d{2}:\d{2}:\d{2})/) || m(/(\d{2}:\d{2}:\d{2})/);
+        if (dt && tm) p.tarikh = `${dt.trim()} ${tm}`; else if (dt) p.tarikh = dt.trim(); else if (tm) p.tarikh = tm;
+        const sp = m(/[Ss]peed\s*[:\s]*([\d.]+)\s*km\/h/i);
+        if (sp) p.kelajuan = sp + ' km/h';
+        p.lorong = m(/[Ll]ane\s+([A-Za-z]+)/);
+        p.gandar = m(/number of single axles\s+(\d+)/i);
+        return p;
+    }
+
+    function parseAndPreview() {
+        const t = document.getElementById('fullText').value.trim();
+        if (!t) { alert('No OCR text!'); return; }
+        lastParsed = parseOCR(t);
+        const labels = { dataId: 'Data ID', beratBacaan: 'Berat Bacaan', tarikh: 'Tarikh & Masa', kelajuan: 'Kelajuan', lorong: 'Lorong', gandar: 'Bil. Gandar' };
+        let html = '';
+        for (const [k, l] of Object.entries(labels))
+            if (lastParsed[k]) html += `<span class="field-tag"><strong>${l}:</strong> ${lastParsed[k]} <button class="fill-btn" onclick="fillField('${k}')">Fill</button></span>`;
+        document.getElementById('parsedFields').innerHTML = html || '<span style="color:#92400e;">⚠️ No fields parsed.</span>';
+        document.getElementById('parsePreview').style.display = 'block';
+    }
+
+    function fillField(key) {
+        const vId = parseInt(document.getElementById('targetVehicle').value);
+        const r = parseInt(document.getElementById('targetRow').value);
+        const val = lastParsed[key];
+        if (!val) return;
+        const map = {
+            dataId: `dataid_${vId}_${r}`, beratBacaan: `bacaan_${vId}_${r}`,
+            tarikh: `tarikh_${vId}_${r}`, kelajuan: `kelajuan_${vId}_${r}`,
+            lorong: `lorong_${vId}_${r}`, gandar: `gandart_${vId}_${r}`
+        };
+        const el = document.getElementById(map[key]);
+        if (el) { el.value = val; if (key === 'beratBacaan') calcDiff(vId, r); highlightRow(vId, r); }
+    }
+
+    function autoFillRow() {
+        const t = document.getElementById('fullText').value.trim();
+        if (!t) { alert('No OCR text!'); return; }
+        parseAndPreview();
+        const vId = parseInt(document.getElementById('targetVehicle').value);
+        const r = parseInt(document.getElementById('targetRow').value);
+        let cnt = 0;
+        ['dataId','beratBacaan','tarikh','kelajuan','lorong','gandar'].forEach(k => {
+            if (lastParsed[k]) { fillField(k); cnt++; }
+        });
+        highlightRow(vId, r);
+        document.getElementById('status').textContent = `✅ Filled ${cnt} fields.`;
+    }
+
+    function highlightRow(vId, r) {
+        document.querySelectorAll('.highlight-row').forEach(el => el.classList.remove('highlight-row'));
+        const row = document.getElementById(`row_${vId}_${r}`);
+        if (row) { row.classList.add('highlight-row'); row.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    }
+
+    // ================================================================
+    //  CALCULATION
+    // ================================================================
+    function calcDiff(vId, r) {
+        const w = parseFloat(document.getElementById(`v_berat_${vId}`)?.value);
+        const b = parseFloat(document.getElementById(`bacaan_${vId}_${r}`)?.value);
+        const o = document.getElementById(`perbezaan_${vId}_${r}`);
+        if (!o) return;
+        if (isNaN(w) || isNaN(b) || w === 0) { o.value = ''; return; }
+        o.value = ((w - b) / w * 100).toFixed(2) + ' %';
+    }
+
+    function recalcVehicle(vId) {
+        ujianList.filter(u => u.kenderaan_id === vId).forEach(u => calcDiff(vId, u.row_num));
+    }
+
+    function recalcAll() {
+        vehicleList.forEach(v => recalcVehicle(v.id));
+    }
+
+    // ================================================================
+    //  CSV EXPORT
+    // ================================================================
+    function exportCSV() {
+        if (currentLocationId) {
+            window.open(`/api/export_csv/${currentLocationId}`, '_blank');
+        }
+    }
+
+    // ================================================================
+    //  INIT
+    // ================================================================
+    (async function init() {
+        await loadLocations();
+        await loadData();
+    })();
+</script>
+</body>
+</html>

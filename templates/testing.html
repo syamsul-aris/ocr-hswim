@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testing Locations</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1e293b; background: #f1f5f9; }
+
+        /* ─── Sidebar ─── */
+        .sidebar { position: fixed; top: 0; left: 0; width: 200px; height: 100vh; background: #1e293b; display: flex; flex-direction: column; z-index: 100; }
+        .sidebar .logo { color: #fff; font-size: 18px; font-weight: 700; padding: 20px 20px 24px; border-bottom: 1px solid #334155; display: flex; align-items: center; gap: 8px; }
+        .sidebar .nav-links { flex: 1; overflow-y: auto; padding: 12px 0; }
+        .sidebar a { display: block; padding: 12px 20px; color: #94a3b8; text-decoration: none; font-weight: 600; font-size: 15px; transition: .15s; }
+        .sidebar a:hover { background: #334155; color: #fff; }
+        .sidebar a.active { background: #4f46e5; color: #fff; }
+        .sidebar .bottom-link { border-top: 1px solid #334155; padding-top: 12px; }
+        .sidebar .bottom-link a { color: #ef4444; }
+
+        /* ─── Main ─── */
+        .main { margin-left: 200px; min-height: 100vh; padding: 24px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+        .page-header h1 { margin: 0; font-size: 24px; }
+        .page-header .subtitle { color: #64748b; font-size: 14px; margin: 2px 0 0 0; }
+        .top-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        /* ─── Buttons ─── */
+        .btn { padding: 9px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; transition: .15s; white-space: nowrap; }
+        .btn:hover { opacity: .85; }
+        .btn-green { background: #16a34a; color: #fff; }
+        .btn-indigo { background: #4f46e5; color: #fff; }
+        .btn-amber { background: #d97706; color: #fff; }
+        .btn-red { background: #dc2626; color: #fff; }
+        .btn-sm { padding: 5px 12px; font-size: 12px; }
+
+        /* ─── Table (Desktop) ─── */
+        .table-wrap { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.06); overflow: hidden; }
+        table.loc-table { width: 100%; border-collapse: collapse; }
+        table.loc-table th, table.loc-table td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        table.loc-table th { background: #f8fafc; font-size: 12px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: .3px; cursor: pointer; user-select: none; white-space: nowrap; }
+        table.loc-table th:hover { background: #f1f5f9; }
+        table.loc-table tr:hover td { background: #f8fafc; }
+        table.loc-table .actions { display: flex; gap: 6px; flex-wrap: nowrap; }
+        .arrow { font-size: 10px; margin-left: 2px; }
+
+        /* ─── Mobile Cards ─── */
+        .mobile-cards { display: none; }
+        .mcard { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.06); margin-bottom: 12px; overflow: hidden; }
+        .mcard-header { padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; }
+        .mcard-header .name { font-weight: 700; font-size: 15px; }
+        .mcard-header .date { font-size: 12px; color: #94a3b8; }
+        .mcard-body { padding: 12px 16px; display: flex; gap: 12px; }
+        .mcard-stat { flex: 1; text-align: center; font-size: 13px; }
+        .mcard-stat .num { font-weight: 700; font-size: 18px; display: block; }
+        .mcard-stat .lbl { color: #94a3b8; font-size: 11px; text-transform: uppercase; }
+        .mcard-actions { padding: 10px 16px; background: #f8fafc; display: flex; gap: 8px; flex-wrap: wrap; border-top: 1px solid #f1f5f9; }
+
+        /* ─── Empty / Loading ─── */
+        .empty-state { text-align: center; padding: 60px 20px; background: #fff; border-radius: 10px; }
+        .empty-state .icon { font-size: 48px; margin-bottom: 8px; }
+        .empty-state h2 { margin: 0 0 6px; }
+        .empty-state p { color: #94a3b8; margin: 0 0 16px; }
+        .skeleton { height: 60px; background: linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; margin-bottom: 8px; }
+        @keyframes shimmer { 0% {background-position:200% 0} 100% {background-position:-200% 0} }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 900px) {
+            .table-wrap { display: none; }
+            .mobile-cards { display: block; }
+        }
+        @media (max-width: 768px) {
+            .sidebar { width: 60px; }
+            .sidebar .logo { font-size: 0; padding: 15px; justify-content: center; }
+            .sidebar .logo::before { content: '📋'; font-size: 20px; }
+            .sidebar .logo img { display: none; }
+            .sidebar a { font-size: 0; padding: 15px; text-align: center; }
+            .sidebar a::before { font-size: 18px; }
+            .sidebar a[href="/"]::before { content: '🏠'; }
+            .sidebar a[href="/testing"]::before { content: '🧪'; }
+            .main { margin-left: 60px; padding: 12px; }
+            .page-header { flex-direction: column; align-items: stretch; }
+            .top-actions { justify-content: stretch; }
+            .top-actions .btn { flex: 1; justify-content: center; }
+        }
+        @media (max-width: 480px) {
+            .sidebar { width: 50px; }
+            .main { margin-left: 50px; padding: 8px; }
+            .mcard-actions { flex-direction: column; }
+            .mcard-actions .btn { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="logo">📋 OCR App</div>
+    <div class="nav-links">
+        <a href="/">🏠 Home</a>
+        <a href="/testing" class="active">🧪 Testing</a>
+    </div>
+    <div class="bottom-link">
+        {% if logged_in %}
+            <a href="/logout">🚪 Logout</a>
+        {% else %}
+            <a href="/login" style="color:#4ade80;">🔐 Login</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="main">
+
+    <div class="page-header">
+        <div>
+            <h1>🧪 Testing Locations</h1>
+            <div class="subtitle">Manage all testing locations</div>
+        </div>
+        <div class="top-actions">
+            {% if logged_in %}
+                <button class="btn btn-green" onclick="addLocation()">➕ Add Location</button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Desktop Table -->
+    <div class="table-wrap" id="desktopTable">
+        <table class="loc-table">
+            <thead>
+                <tr>
+                    <th onclick="sortBy(0)" style="width:50px;"># <span class="arrow" id="a0"></span></th>
+                    <th onclick="sortBy(1)">Location <span class="arrow" id="a1"></span></th>
+                    <th onclick="sortBy(2)" style="width:120px;">Created <span class="arrow" id="a2"></span></th>
+                    <th onclick="sortBy(3)" style="width:80px;">Vehicles <span class="arrow" id="a3"></span></th>
+                    <th onclick="sortBy(4)" style="width:70px;">Tests <span class="arrow" id="a4"></span></th>
+                    <th style="width:200px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"><tr><td colspan="6" style="text-align:center;padding:30px;color:#94a3b8;">Loading...</td></tr></tbody>
+        </table>
+    </div>
+
+    <!-- Mobile Cards -->
+    <div class="mobile-cards" id="mobileCards"></div>
+
+</div>
+
+<script>
+    const loggedIn = {{ 'true' if logged_in else 'false' }};
+    let locData = [];
+    let sortCol = -1, sortAsc = true;
+
+    async function load() {
+        try {
+            const r = await fetch('/api/tokens');
+            let locs = await r.json();
+
+            // Fetch counts
+            for (const l of locs) {
+                try {
+                    const dr = await fetch(`/api/data/${l.id}`);
+                    const d = await dr.json();
+                    l.vehicles = d.kenderaan.length;
+                    l.tests = d.ujian.length;
+                } catch(e) { l.vehicles = '-'; l.tests = '-'; }
+            }
+
+            locData = locs;
+            renderTable();
+            renderCards();
+        } catch(e) {
+            document.getElementById('tableBody').innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:#dc2626;">❌ ${e.message}</td></tr>`;
+        }
+    }
+
+    function renderTable() {
+        const tb = document.getElementById('tableBody');
+        if (locData.length === 0) {
+            tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:#94a3b8;">No locations yet.</td></tr>';
+            return;
+        }
+        tb.innerHTML = locData.map((l, i) => `
+            <tr>
+                <td style="font-weight:700;">${i + 1}</td>
+                <td><strong>${esc(l.name)}</strong></td>
+                <td style="color:#64748b;">${l.created_at ? l.created_at.slice(0,10) : '-'}</td>
+                <td>${l.vehicles ?? '-'}</td>
+                <td>${l.tests ?? '-'}</td>
+                <td>
+                    <div class="actions">
+                        <a href="/view/${l.token}" class="btn btn-amber btn-sm">👁️ View</a>
+                        ${loggedIn ? `
+                            <a href="/edit/${l.token}" class="btn btn-indigo btn-sm">✏️ Edit</a>
+                            <button class="btn btn-red btn-sm" onclick="delLoc(${l.id})">🗑</button>
+                        ` : ''}
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function renderCards() {
+        const mc = document.getElementById('mobileCards');
+        if (locData.length === 0) {
+            mc.innerHTML = '<div style="text-align:center;padding:30px;color:#94a3b8;">No locations yet.</div>';
+            return;
+        }
+        mc.innerHTML = locData.map(l => `
+            <div class="mcard">
+                <div class="mcard-header">
+                    <span class="name">📍 ${esc(l.name)}</span>
+                    <span class="date">${l.created_at ? l.created_at.slice(0,10) : ''}</span>
+                </div>
+                <div class="mcard-body">
+                    <div class="mcard-stat"><span class="num">${l.vehicles ?? '-'}</span><span class="lbl">Vehicles</span></div>
+                    <div class="mcard-stat"><span class="num">${l.tests ?? '-'}</span><span class="lbl">Tests</span></div>
+                </div>
+                <div class="mcard-actions">
+                    <a href="/view/${l.token}" class="btn btn-amber btn-sm" style="flex:1;justify-content:center;">👁️ View</a>
+                    ${loggedIn ? `
+                        <a href="/edit/${l.token}" class="btn btn-indigo btn-sm" style="flex:1;justify-content:center;">✏️ Edit</a>
+                        <button class="btn btn-red btn-sm" onclick="delLoc(${l.id})" style="flex:1;">🗑 Delete</button>
+                    ` : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // ─── Sort ───
+    function sortBy(col) {
+        if (sortCol === col) sortAsc = !sortAsc;
+        else { sortCol = col; sortAsc = true; }
+        const keys = ['id', 'name', 'created_at', 'vehicles', 'tests'];
+        locData.sort((a,b) => {
+            let va = a[keys[col]] ?? '', vb = b[keys[col]] ?? '';
+            if (typeof va === 'string') { va = va.toLowerCase(); vb = vb.toLowerCase(); }
+            if (va < vb) return sortAsc ? -1 : 1;
+            if (va > vb) return sortAsc ? 1 : -1;
+            return 0;
+        });
+        renderTable();
+        for (let i = 0; i < 5; i++) document.getElementById(`a${i}`).textContent = '';
+        document.getElementById(`a${col}`).textContent = sortAsc ? '▲' : '▼';
+    }
+
+    async function addLocation() {
+        const name = prompt('Location name:');
+        if (!name) return;
+        await fetch('/api/locations', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name})});
+        load();
+    }
+
+    async function delLoc(id) {
+        if (!confirm('Delete this location and ALL data?')) return;
+        await fetch(`/api/locations/${id}`, {method:'DELETE'});
+        load();
+    }
+
+    function esc(s) { if (!s) return ''; return String(s).replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    load();
+</script>
+</body>
+</html>

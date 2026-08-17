@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Location</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #f1f5f9; margin: 0; padding: 20px; color: #1e293b; }
+        .container { max-width: 1440px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.06); }
+        h1 { border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; font-size: 22px; }
+        a.back { color:#4f46e5; text-decoration:none; font-weight:600; display:inline-block; margin-bottom:12px; }
+        a.back:hover { text-decoration:underline; }
+        .flex { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+        .flex-between { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+        .mb-12 { margin-bottom:12px; }
+        .mt-8 { margin-top:8px; }
+        .btn { padding:9px 20px; border:none; border-radius:6px; cursor:pointer; font-weight:600; font-size:14px; }
+        .btn:hover { opacity:.85; }
+        .btn-green { background:#16a34a; color:#fff; }
+        .btn-indigo { background:#4f46e5; color:#fff; }
+        .btn-orange { background:#d97706; color:#fff; }
+        .btn-red { background:#dc2626; color:#fff; }
+        .btn-sm { font-size:12px; padding:5px 12px; }
+        .btn-lg { font-size:16px; padding:12px 30px; }
+
+        .loc-bar { background:#f8faff; border:2px solid #e0e7ff; border-radius:10px; padding:14px 16px; margin-bottom:24px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+        .loc-bar input { padding:6px 10px; border:1px solid #c7d2fe; border-radius:5px; font-size:13px; width:100px; }
+        .loc-name { font-size:16px; font-weight:700; color:#0f172a; }
+
+        .ocr-box { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:16px; margin-bottom:24px; }
+        .ocr-box textarea { width:100%; height:80px; padding:10px; border:1px solid #cbd5e1; border-radius:6px; resize:vertical; font-size:13px; margin-top:8px; }
+        #status { font-weight:600; font-size:13px; color:#059669; margin:6px 0; }
+        .ocr-row select { padding:6px 10px; border:1px solid #cbd5e1; border-radius:5px; background:#fff; }
+
+        .parse-preview { background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:12px; margin-top:10px; display:none; }
+        .parse-preview .tag { background:#fff; border:1px solid #e2e8f0; border-radius:5px; padding:4px 10px; font-size:12px; display:inline-flex; align-items:center; gap:6px; }
+        .fill-btn { background:#4f46e5; color:#fff; border:none; border-radius:3px; padding:2px 8px; cursor:pointer; font-size:11px; font-weight:600; }
+
+        .v-section { border:2px solid #e2e8f0; border-radius:10px; padding:20px; margin-bottom:24px; background:#fafaf9; }
+        .v-header { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:14px; background:#fff; padding:14px; border-radius:8px; border:1px solid #e2e8f0; }
+        .field label { display:block; font-size:11px; font-weight:700; color:#64748b; margin-bottom:3px; text-transform:uppercase; }
+        .field input { width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:5px; font-size:14px; }
+
+        .table-wrap { overflow-x:auto; background:#fff; border-radius:8px; border:1px solid #e2e8f0; }
+        table { width:100%; border-collapse:collapse; min-width:1050px; }
+        th, td { border:1px solid #e2e8f0; padding:0; text-align:center; }
+        th { background:#f1f5f9; padding:10px 5px; font-size:11px; text-transform:uppercase; color:#475569; font-weight:700; }
+        td input, td select { width:100%; padding:8px 4px; border:none; text-align:center; font-size:13px; background:transparent; }
+        td input:focus, td select:focus { background:#eef2ff; outline:none; }
+        td input[readonly] { background:#f8fafc; font-weight:700; color:#0284c7; }
+        .bil-cell { background:#f8fafc; font-weight:700; width:40px; }
+        /* ─── Sidebar Layout ─── */
+        body { margin: 0; padding: 0; font-family: -apple-system, sans-serif; color: #1e293b; }
+        .sidebar { position: fixed; top: 0; left: 0; width: 200px; height: 100vh; background: #1e293b; display: flex; flex-direction: column; z-index: 100; }
+        .sidebar .logo { color: #fff; font-size: 18px; font-weight: 700; padding: 20px 20px 24px 20px; border-bottom: 1px solid #334155; }
+        .sidebar .nav-links { flex: 1; overflow-y: auto; padding: 12px 0; }
+        .sidebar a { display: block; padding: 12px 20px; color: #94a3b8; text-decoration: none; font-weight: 600; font-size: 15px; }
+        .sidebar a:hover { background: #334155; color: #fff; }
+        .sidebar a.active { background: #4f46e5; color: #fff; }
+        .sidebar .bottom-link { border-top: 1px solid #334155; padding-top: 12px; }
+        .sidebar .bottom-link a { color: #ef4444; }  /* Red for login/logout */
+
+        /* Main content - scrollable */
+        .main { margin-left: 200px; height: 100vh; overflow-y: auto; background: #f1f5f9; }
+        .main .container { max-width: 1440px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+
+        .action-bar { margin-top:20px; padding:16px; background:#f8fafc; border:2px dashed #cbd5e1; border-radius:10px; text-align:center; }
+        #saveStatus { display:inline-block; padding:3px 14px; border-radius:20px; font-size:12px; font-weight:600; background:#e2e8f0; color:#64748b; margin-left:10px; }
+        #error { color:#dc2626; font-weight:600; display:none; padding:10px; background:#fef2f2; border:1px solid #fecaca; border-radius:6px; margin-bottom:10px; }
+        /* ─── Responsive: Mobile ─── */
+        @media (max-width: 768px) {
+            .sidebar { width: 60px; min-width: 60px; }
+            .sidebar .logo { font-size: 0; padding: 15px; text-align: center; }
+            .sidebar .logo::first-letter { font-size: 24px; }  /* Shows only the emoji */
+            .sidebar a { font-size: 0; padding: 15px; text-align: center; }
+            .sidebar a::first-letter { font-size: 20px; }  /* Shows only the emoji */
+            .sidebar .nav-links a::first-letter { font-size: 20px; }
+            .main { margin-left: 60px; }
+            .main .container { padding: 12px; border-radius: 8px; }
+            
+            /* Grids stack */
+            .grid-4 { grid-template-columns: repeat(2, 1fr) !important; gap: 8px; }
+            .grid-4 .card { padding: 12px; }
+            .grid-4 .card .num { font-size: 24px; }
+            
+            /* Latest boxes stack */
+            #latestBoxes { grid-template-columns: 1fr !important; }
+            
+            /* Vehicle header stacks */
+            .v-header { grid-template-columns: repeat(2, 1fr) !important; gap: 8px; }
+            .loc-bar { flex-direction: column; align-items: stretch; }
+            .loc-bar input { width: 100%; }
+            .flex-between { flex-direction: column; align-items: stretch; }
+            
+            /* Tables scrollable */
+            .table-wrap { overflow-x: auto; }
+            table { min-width: 800px; }
+            th, td { padding: 6px 4px; font-size: 11px; }
+            td input, td select { padding: 4px 2px; font-size: 11px; }
+            
+            /* Buttons full width */
+            .btn { width: 100%; text-align: center; margin-bottom: 4px; }
+            .flex .btn { width: auto; }
+            .gap { flex-wrap: wrap; }
+            .links { flex-wrap: wrap; }
+            .links a { flex: 1; text-align: center; }
+            
+            /* OCR section */
+            .ocr-box textarea { height: 60px; }
+            .ocr-row select { min-width: 80px; font-size: 12px; }
+            
+            /* Cards on home */
+            .latest-card { padding: 14px; }
+            .latest-card .vehicle-name { font-size: 15px; }
+            .latest-card .diff { font-size: 22px; }
+            
+            /* Action bar */
+            .action-bar { padding: 10px; }
+            .action-bar .btn-lg { font-size: 14px; padding: 10px 20px; }
+            
+            /* View page location bar */
+            .loc-bar { gap: 6px; }
+        }
+
+        /* ─── Extra small phones ─── */
+        @media (max-width: 480px) {
+            .sidebar { width: 50px; min-width: 50px; }
+            .sidebar .logo { padding: 10px; }
+            .sidebar a { padding: 12px 10px; }
+            .main { margin-left: 50px; }
+            .main .container { padding: 8px; }
+            .grid-4 { grid-template-columns: 1fr 1fr !important; }
+            .v-header { grid-template-columns: 1fr !important; }
+            h1 { font-size: 18px; }
+            h2 { font-size: 16px; }
+            h3 { font-size: 14px; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <body>
+<!-- <div class="sidebar">
+    <div class="logo">📋 OCR Kejituan HM-WIM</div>
+    <a href="/">🏠 Home</a>
+    <a href="/testing">🧪 Testing</a>
+</div> -->
+
+<div class="sidebar">
+    <div class="logo">📋 OCR App</div>
+    <div class="nav-links">
+        <a href="/" class="{{ 'active' if request.path == '/' else '' }}">🏠 Home</a>
+        <a href="/testing" class="{{ 'active' if request.path == '/testing' else '' }}">🧪 Testing</a>
+    </div>
+    <div class="bottom-link">
+        {% if logged_in %}
+            <a href="/logout">🚪 Logout</a>
+        {% else %}
+            <a href="/login" style="color:#4ade80;">🔐 Login</a>
+        {% endif %}
+    </div>
+</div>
+
+
+<div class="main">
+    <div class="container">
+       <a href="/" class="back">← Back to Dashboard</a>
+    <h1>✏️ <span id="locTitle">Edit Location</span> <span id="saveStatus">⏳ Loading...</span></h1>
+    <div id="error"></div>
+
+    <!-- Location Bar -->
+    <div class="loc-bar">
+        <span class="loc-name" id="locName"></span>
+         <span style="font-size:12px;">Location:</span>
+        <input type="text" id="loc" placeholder="Location">
+        <span style="font-size:12px;">Bound 1:</span>
+        <input type="text" id="b1" placeholder="Bound 1">
+        <span style="font-size:12px;">Bound 2:</span>
+        <input type="text" id="b2" placeholder="Bound 2">
+        <button class="btn btn-green btn-sm" onclick="save()">💾 Save</button>
+        <button class="btn btn-indigo btn-sm" onclick="exportCSV()">⬇ CSV</button>
+    </div>
+
+    <!-- OCR -->
+    <div class="ocr-box">
+        <h3 style="margin:0 0 6px 0;">📸 OCR: Upload Screenshot</h3>
+        <input type="file" id="imgInput" accept="image/*">
+        <div id="status">Waiting for image...</div>
+        <textarea id="ocrText" placeholder="Extracted text appears here..."></textarea>
+        <div class="flex mt-8">
+            <select id="targetV" class="ocr-row" onchange="rebuildRows()"></select>
+            <select id="targetR" class="ocr-row"></select>
+            <button class="btn btn-indigo btn-sm" onclick="preview()">🔍 Preview</button>
+            <button class="btn btn-orange btn-sm" onclick="autoFill()">⚡ Auto Fill</button>
+        </div>
+        <div id="previewBox" class="parse-preview">
+            <strong>📋 Parsed:</strong>
+            <div id="parsedFields" class="flex mt-8" style="gap:6px;"></div>
+        </div>
+    </div>
+
+    <!-- Vehicle Sections -->
+    <div id="vehicles"></div>
+
+    <!-- Add Vehicle -->
+    <div class="action-bar">
+        <button class="btn btn-green btn-lg" onclick="addVeh()">➕ Add New Vehicle</button>
+    </div>
+    </div>
+</div>
+<!-- Keep all scripts at the bottom -->
+</body>
+
+
+<script>
+    const loggedIn = {{ 'true' if logged_in else 'false' }}; 
+
+    const LID = {{ location_id }};
+    let vehicles = [];
+    let tests = [];
+    let parsed = {};
+    let locationName = '';   // ← Store name here instead of reading from DOM
+
+    // ─── LOAD ───
+    async function load() {
+        try {
+            const r = await fetch(`/api/data/${LID}`);
+            const d = await r.json();
+            
+            locationName = d.location.name || '';  // ← Save in variable
+            document.getElementById('locTitle').textContent = locationName || 'Edit Location';
+            document.getElementById('locName').textContent = locationName;
+            document.getElementById('loc').value = d.location.name || 'Location';
+            document.getElementById('b1').value = d.location.bound1_name || 'Bound 1';
+            document.getElementById('b2').value = d.location.bound2_name || 'Bound 2';
+            
+            vehicles = d.kenderaan || [];
+            tests = d.ujian || [];
+            
+            render();
+            rebuildTargets();
+            calcAll();
+            
+            document.getElementById('saveStatus').textContent = `✅ ${vehicles.length} vehicle, ${tests.length} rows`;
+            document.getElementById('saveStatus').style.background = '#dcfce7';
+            document.getElementById('saveStatus').style.color = '#166534';
+        } catch(e) {
+            document.getElementById('saveStatus').textContent = '❌ ' + e.message;
+            document.getElementById('saveStatus').style.background = '#fee2e2';
+            document.getElementById('saveStatus').style.color = '#991b1b';
+        }
+    }
+
+    // ─── RENDER ───
+    function render() {
+        const c = document.getElementById('vehicles');
+        const b1 = document.getElementById('b1').value || 'Bound 1';
+        const b2 = document.getElementById('b2').value || 'Bound 2';
+        let html = '';
+
+        vehicles.forEach(v => {
+            const rows = tests.filter(t => t.kenderaan_id === v.id).sort((a,b) => a.row_num - b.row_num);
+            let trs = '';
+           rows.forEach((t, idx) => {
+                trs += `<tr id="row_${v.id}_${t.row_num}">
+                    <td class="bil-cell">${idx + 1}</td>
+                    <td><select id="a_${v.id}_${t.row_num}">
+                        <option value="">Select...</option>
+                        <option value="${b1}">${b1}</option>
+                        <option value="${b2}">${b2}</option>
+                    </select></td>
+                    <td><input id="di_${v.id}_${t.row_num}" value="${h(t.data_id)}"></td>
+                    <td><input id="tm_${v.id}_${t.row_num}" value="${h(t.tarikh)}"></td>
+                    <td><input id="sp_${v.id}_${t.row_num}" value="${h(t.kelajuan)}"></td>
+                    <td><input id="bg_${v.id}_${t.row_num}" value="${h(t.bil_gandar)}"></td>
+                    <td><input id="ln_${v.id}_${t.row_num}" value="${h(t.lorong)}"></td>
+                    <td><input type="number" step="0.01" id="bw_${v.id}_${t.row_num}" value="${h(t.berat_bacaan)}" oninput="calc(${v.id},${t.row_num})"></td>
+                    <td><input readonly id="pct_${v.id}_${t.row_num}" value="${h(t.perbezaan)}" placeholder="Auto %"></td>
+                    <td><input id="rm_${v.id}_${t.row_num}" value="${h(t.remark)}"></td> <td><button onclick="deleteRow(${v.id}, ${t.row_num})" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:16px;padding:4px;" title="Delete row">✕</button></td>
+                </tr>`;
+            });
+
+            html += `<div class="v-section">
+                <div class="flex-between" style="margin-bottom:12px;">
+                    <h3 style="margin:0;">🚗 ${h(v.name || 'Vehicle')}</h3>
+                    <div class="flex">
+                        <button class="btn btn-indigo btn-sm" onclick="addRow(${v.id})">➕ Row</button>
+                        <button class="btn btn-red btn-sm" onclick="delVeh(${v.id})">✕ Delete</button>
+                    </div>
+                </div>
+                <div class="v-header">
+                    <div class="field"><label>Name</label><input id="vn_${v.id}" value="${h(v.name)}"></div>
+                    <div class="field"><label>Plate</label><input id="vp_${v.id}" value="${h(v.plat)}"></div>
+                    <div class="field"><label>Weight (kg)</label><input type="number" step="0.01" id="vw_${v.id}" value="${h(v.berat)}" oninput="calcVeh(${v.id})"></div>
+                    <div class="field"><label>Axles</label><input id="va_${v.id}" value="${h(v.gandar)}"></div>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr>
+                            <th>Bil</th><th style="width:110px;">Bound</th><th>Data ID</th><th>Date/Time</th>
+                            <th>Speed</th><th>Axles</th><th>Lane</th><th>Weight Read</th>
+                            <th>Diff %</th><th>Remark</th><th style="width:40px;"></th>
+                        </tr></thead>
+                        <tbody>${trs}</tbody>
+                    </table>
+                </div>
+            </div>`;
+        });
+
+        if (vehicles.length === 0) {
+            html = '<p style="text-align:center;padding:30px;color:#94a3b8;">No vehicles yet. Click "Add New Vehicle" below.</p>';
+        }
+
+        c.innerHTML = html;
+
+        tests.forEach(t => {
+            const sel = document.getElementById(`a_${t.kenderaan_id}_${t.row_num}`);
+            if (sel && t.arah) sel.value = t.arah;
+        });
+    }
+
+    function h(s) { if (!s) return ''; return String(s).replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    // ─── ADD VEHICLE ───
+    async function addVeh() {
+        const name = prompt('Vehicle name:') || 'Kenderaan';
+        try {
+            const r = await fetch(`/api/add_kenderaan/${LID}`, {
+                method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name})
+            });
+            const data = await r.json();
+            if (data.status === 'ok') {
+                // Reload everything from server
+                await load();
+                // Also save current form data (so vehicle fields aren't empty)
+                await saveForm();
+            }
+        } catch(e) {
+            alert('Error adding vehicle: ' + e.message);
+        }
+    }
+
+    // ─── DELETE VEHICLE ───
+    async function delVeh(id) {
+        if (!confirm('Delete this vehicle and ALL its test rows?')) return;
+        try {
+            await fetch(`/api/delete_kenderaan/${id}`, {method:'DELETE'});
+            await load();
+        } catch(e) { alert('Delete failed: ' + e.message); }
+    }
+
+    // ─── ADD ROW ───
+    async function addRow(vId) {
+        const rows = tests.filter(t => t.kenderaan_id === vId);
+        const maxR = rows.length > 0 ? Math.max(...rows.map(t => t.row_num)) : 0;
+        try {
+            await fetch(`/api/add_row/${vId}`, {
+                method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({row_num: maxR + 1})
+            });
+            await load();
+        } catch(e) { alert('Add row failed: ' + e.message); }
+    }
+
+    // ─── SAVE FORM (saves all data, called by save button AND after addVeh) ───
+    async function saveForm() {
+        const kend = vehicles.map(v => ({
+            id: v.id, name: g(`vn_${v.id}`), plat: g(`vp_${v.id}`),
+            berat: g(`vw_${v.id}`), gandar: g(`va_${v.id}`)
+        }));
+        const uji = tests.map(t => ({
+            kenderaan_id: t.kenderaan_id, row_num: t.row_num,
+            arah: g(`a_${t.kenderaan_id}_${t.row_num}`),
+            data_id: g(`di_${t.kenderaan_id}_${t.row_num}`),
+            tarikh: g(`tm_${t.kenderaan_id}_${t.row_num}`),
+            kelajuan: g(`sp_${t.kenderaan_id}_${t.row_num}`),
+            bil_gandar: g(`bg_${t.kenderaan_id}_${t.row_num}`),
+            lorong: g(`ln_${t.kenderaan_id}_${t.row_num}`),
+            berat_bacaan: g(`bw_${t.kenderaan_id}_${t.row_num}`),
+            perbezaan: g(`pct_${t.kenderaan_id}_${t.row_num}`),
+            remark: g(`rm_${t.kenderaan_id}_${t.row_num}`)
+        }));
+
+        try {
+            const r = await fetch(`/api/save/${LID}`, {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({kenderaan: kend, ujian: uji})
+            });
+            return r.ok;
+        } catch(e) { return false; }
+    }
+
+    // ─── SAVE (called by Save button — saves settings + form) ───
+    async function save() {
+        // Save bound settings FIRST (using stored variable, not DOM)
+        const r1 = await fetch(`/api/locations/${LID}`, {
+            method:'PUT', headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+                // name: locationName,   // ← Use stored variable, not DOM!
+                name: document.getElementById('loc').value || 'Location',
+                bound1_name: document.getElementById('b1').value || 'Bound 1',
+                bound2_name: document.getElementById('b2').value || 'Bound 2'
+            })
+        });
+
+        // Save form data
+        const ok = await saveForm();
+
+        const el = document.getElementById('saveStatus');
+        if (r1.ok && ok) {
+            el.textContent = '✅ Saved ' + new Date().toLocaleTimeString();
+            el.style.background = '#dcfce7';
+            el.style.color = '#166534';
+        } else {
+            el.textContent = '❌ Save failed';
+            el.style.background = '#fee2e2';
+            el.style.color = '#991b1b';
+        }
+    }
+
+    async function deleteRow(kenderaanId, rowNum) {
+        if (!confirm(`Delete Row ${rowNum}? This cannot be undone.`)) return;
+        try {
+            const r = await fetch(`/api/delete_row/${kenderaanId}/${rowNum}`, {
+                method: 'DELETE'
+            });
+            if (r.ok) {
+                // Remove from local array
+                tests = tests.filter(t => !(t.kenderaan_id === kenderaanId && t.row_num === rowNum));
+                // Re-render
+                render();
+                rebuildTargets();
+                save();
+            }
+        } catch(e) {
+            alert('Delete failed: ' + e.message);
+        }
+    }
+
+
+    function g(id) { return document.getElementById(id)?.value || ''; }
+
+    // Auto-save
+    let st;
+    document.addEventListener('input', e => {
+        if (!e.target.id || !vehicles.length) return;
+        const id = e.target.id;
+        if (id.startsWith('vw_')) calcVeh(parseInt(id.split('_')[1]));
+        else if (id.startsWith('bw_')) {
+            const p = id.split('_');
+            if (p.length >= 3) calc(parseInt(p[1]), parseInt(p[2]));
+        }
+        clearTimeout(st);
+        st = setTimeout(save, 3000);
+    });
+
+    // ─── CALC ───
+    function calc(vId, r) {
+        const w = parseFloat(g(`vw_${vId}`));
+        const b = parseFloat(g(`bw_${vId}_${r}`));
+        const o = document.getElementById(`pct_${vId}_${r}`);
+        if (!o) return;
+        if (isNaN(w) || isNaN(b) || w === 0) { o.value = ''; return; }
+        o.value = ((b - w) / w * 100).toFixed(2) + ' %';
+    }
+
+    function calcVeh(vId) {
+        tests.filter(t => t.kenderaan_id === vId).forEach(t => calc(vId, t.row_num));
+    }
+
+    function calcAll() {
+        vehicles.forEach(v => calcVeh(v.id));
+    }
+
+    // ─── TARGET DROPDOWNS ───
+    function rebuildTargets() {
+        const vs = document.getElementById('targetV');
+        vs.innerHTML = '';
+        vehicles.forEach(v => {
+            vs.innerHTML += `<option value="${v.id}">${v.name || 'Veh '+v.id}</option>`;
+        });
+        rebuildRows();
+    }
+
+    function rebuildRows() {
+        const vId = parseInt(document.getElementById('targetV').value);
+        const rs = document.getElementById('targetR');
+        rs.innerHTML = '';
+        tests.filter(t => t.kenderaan_id === vId).sort((a,b) => a.row_num - b.row_num).forEach(t => {
+            rs.innerHTML += `<option value="${t.row_num}">Row ${t.row_num}</option>`;
+        });
+    }
+
+    // ─── OCR ───
+    document.getElementById('imgInput').addEventListener('change', async e => {
+        const f = e.target.files[0];
+        if (!f) return;
+        document.getElementById('status').textContent = '⏳ Reading...';
+        document.getElementById('ocrText').value = '';
+        try {
+            const { data } = await Tesseract.recognize(f, 'eng');
+            document.getElementById('ocrText').value = data.text;
+            document.getElementById('status').textContent = '✅ Done.';
+        } catch(_) { document.getElementById('status').textContent = '❌ Error.'; }
+    });
+
+    function parseText(text) {
+        const p = {};
+        const m = (re, i=1) => { const x = text.match(re); return x ? x[i] : null; };
+        p.dataId = m(/[Dd]\s*(\d{5,})/);
+        p.beratBacaan = m(/gross\s*weight\s*[:\s]*([\d.]+)\s*kg/i);
+        const dt = m(/[Dd]ate\s+([A-Za-z]+[\s.]?\d{1,2},?\s*\d{4})/);
+        const tm = m(/[Tt]ime\s+(\d{2}:\d{2}:\d{2})/) || m(/(\d{2}:\d{2}:\d{2})/);
+        if (dt && tm) p.tarikh = `${dt.trim()} ${tm}`; else if (dt) p.tarikh = dt.trim(); else if (tm) p.tarikh = tm;
+        const sp = m(/[Ss]peed\s*[:\s]*([\d.]+)\s*km\/h/i);
+        if (sp) p.kelajuan = sp + ' km/h';
+        p.lorong = m(/[Ll]ane\s+([A-Za-z]+)/);
+        p.gandar = m(/number of single axles\s+(\d+)/i);
+        return p;
+    }
+
+    function preview() {
+        const t = document.getElementById('ocrText').value.trim();
+        if (!t) { alert('No OCR text!'); return; }
+        parsed = parseText(t);
+        const labels = {dataId:'Data ID', beratBacaan:'Berat', tarikh:'Date/Time', kelajuan:'Speed', lorong:'Lane', gandar:'Axles'};
+        let html = '';
+        for (const [k, l] of Object.entries(labels))
+            if (parsed[k]) html += `<span class="tag"><strong>${l}:</strong> ${parsed[k]} <button class="fill-btn" onclick="fill('${k}')">Fill</button></span>`;
+        document.getElementById('parsedFields').innerHTML = html || '<span>No fields found.</span>';
+        document.getElementById('previewBox').style.display = 'block';
+    }
+
+    function fill(key) {
+        const vId = parseInt(document.getElementById('targetV').value);
+        const r = parseInt(document.getElementById('targetR').value);
+        const val = parsed[key];
+        if (!val) return;
+        const map = {dataId:`di_${vId}_${r}`, beratBacaan:`bw_${vId}_${r}`, tarikh:`tm_${vId}_${r}`, kelajuan:`sp_${vId}_${r}`, lorong:`ln_${vId}_${r}`, gandar:`bg_${vId}_${r}`};
+        const el = document.getElementById(map[key]);
+        if (el) { el.value = val; if (key === 'beratBacaan') calc(vId, r); }
+    }
+
+    function autoFill() {
+        preview();
+        const vId = parseInt(document.getElementById('targetV').value);
+        const r = parseInt(document.getElementById('targetR').value);
+        let cnt = 0;
+        ['dataId','beratBacaan','tarikh','kelajuan','lorong','gandar'].forEach(k => { if (parsed[k]) { fill(k); cnt++; } });
+        document.getElementById('status').textContent = `✅ Filled ${cnt} fields.`;
+    }
+
+    function exportCSV() { window.open(`/api/export_csv/${LID}`, '_blank'); }
+
+    load();
+</script>
+
+</body>
+</html>
